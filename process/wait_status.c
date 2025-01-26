@@ -23,10 +23,13 @@ int main()
         wpid=wait(&status);//保存child退出状态
         if(WIFEXITED(status))//宏为真说明child正常终止
         {
+            //获取推出码
             printf("i am parent,pid= %d child,exit code=%d\n",wpid,WEXITSTATUS(status));
         }
         else if(WIFSIGNALED(status))//宏函数为真说明child被信号终止
         {
-            printf("i am parent ,pid=")
+            //获取信号编号
+            printf("i am parent ,pid=%d child ,killed by %d signal",wpid,WTERMSIG(status));
         }
     }
+}
