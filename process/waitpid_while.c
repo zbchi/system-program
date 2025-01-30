@@ -38,7 +38,7 @@ int main()
             else if(wpid==0)
             {
                 sleep(1);
-                continue;
+                continue; 
             }
        }
        printf("catch all child finish\n");

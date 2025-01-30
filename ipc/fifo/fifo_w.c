@@ -1,6 +1,8 @@
 #include<unistd.h>
 #include<string.h>
 #include<stdlib.h>
+#include<stdio.h>
+#include<fcntl.h>
 int main(int argc,char*argv[])
 {
     int fd,i;
@@ -22,8 +24,8 @@ int main(int argc,char*argv[])
     while(1)
     {
         sprintf(buf,"hello %d\n",i++);
-        write(fd,buf,sizeof(buf));
-        sleep(1);
+        write(fd,buf,strlen(buf));
+        sleep(2);
     }
     close(fd);
 
