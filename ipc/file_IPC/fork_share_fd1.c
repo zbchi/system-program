@@ -28,6 +28,7 @@ int main()
     {
         write(fd,str,strlen(str));
         printf("child wrote over...\n");
+        
         close(fd);
     }
     else
