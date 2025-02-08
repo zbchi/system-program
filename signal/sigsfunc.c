@@ -27,6 +27,7 @@ int main()
 
     // 将2号信号添加到自定义信号集
     sigaddset(&set, SIGINT);
+    sigaddset(&set,SIGQUIT);
 
     // 借助自定义信号集，设置pcb中的信号屏蔽字中的2号信号为屏蔽
     int ret = sigprocmask(SIG_BLOCK, &set, &oldset);
