@@ -52,6 +52,7 @@ void *produser(void *p)
         head = mp;
         pthread_mutex_unlock(&lock);
 
+        // 通知消费者
         pthread_cond_signal(&has_product);
 
         sleep(rand() % 3);
