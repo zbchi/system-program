@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const int MAX_DEPTH = 5;
+const int MAX_DEPTH = 6;
 const int SIZE = 100000000;
 
 int count = 0;
@@ -79,8 +79,10 @@ void quicksort_multiple2(vector<int> &array, int low, int high, int depth)
 	if (depth < MAX_DEPTH)
 	{
 		int pivot = partition(array, low, high);
-		thread left(quicksort_multiple2, ref(array), low, pivot - 1, depth + 1);
+
 		thread right(quicksort_multiple2, ref(array), pivot + 1, high, depth + 1);
+		// quicksort_multiple2(array, low, pivot - 1, depth + 1);
+		thread left(quicksort_multiple2, ref(array), low, pivot - 1, depth + 1);
 
 		left.join();
 		right.join();
@@ -136,8 +138,9 @@ int main()
 	Arr origin(arr, 0, SIZE - 1, 0);
 
 	cout << "start" << endl;
-	quicksort_multiple2(arr, 0, SIZE - 1, 0);
-	// quicksort_multiple_byC(&origin);
+	quicksort_multiple(origin);
+	// quicksort_multiple2(arr, 0, SIZE - 1, 0);
+	//   quicksort_multiple_byC(&origin);
 
 	// for (int i = 0; i < 100000000; i++)
 	//	cout << arr[i];
