@@ -8,8 +8,10 @@
 #include <vector>
 #include <functional>
 #include <condition_variable>
+#include <atomic>
 using namespace std;
 const int SIZE = 10000;
+const int THREAD_NUMS = 16;
 
 class threadPool
 {
@@ -24,32 +26,76 @@ public:
         }
     }
 
+    ~threadPool()
+    {
+        unique_lock<mutex> lock(m_productor);
+        while (!tasks.empty() || threads_active != 0)
+        {
+            condition_producter.wait(lock);
+        }
+        condition_consumer.notify_all();
+        cout << "thread pool exited" << endl;
+        cout << "~thread pool exited" << endl;
+
+        cout << "------" << endl;
+        // 为什么卡在这里了
+        return;
+    }
+
     void add_task(function<void()> tmp)
     {
-        lock_guard<mutex> lock(m);
+        lock_guard<mutex> lock(m_consumer);
         tasks.push(tmp);
-        cv.notify_all();
+        condition_consumer.notify_all();
     }
     void work()
     {
         while (1)
         {
-            usleep(10);
-            unique_lock<mutex> lock(m);
+
+            unique_lock<mutex> lock(m_consumer);
             while (tasks.empty())
             {
-                cv.wait(lock);
+                condition_consumer.wait(lock);
             }
             function<void()> tmp = tasks.front();
             tasks.pop();
+
+            threads_active++;
+
             lock.unlock();
             tmp();
+
+            lock.lock();
+            threads_active--;
+            if (tasks.empty() && threads_active == 0)
+            {
+                condition_producter.notify_all();
+                cout << "i am thread ,i have exited" << endl;
+                return;
+            }
+            lock.unlock();
         }
     }
+
+    void stop()
+    {
+        unique_lock<mutex> lock(m_productor);
+        while (!tasks.empty() || threads_active != 0)
+        {
+            condition_producter.wait(lock);
+        }
+        cout << "thread pool exited" << endl;
+    }
+
+private:
     queue<function<void()>> tasks;
-    mutex m;
+    mutex m_consumer;
+    mutex m_productor;
     vector<thread> threads;
-    condition_variable cv;
+    condition_variable condition_consumer;
+    condition_variable condition_producter;
+    int threads_active = 0;
 };
 
 vector<int> caculate_factorial(int n)
@@ -82,7 +128,7 @@ vector<int> caculate_factorial(int n)
 void create_tasks()
 {
     srand(time(NULL));
-    threadPool pool(16);
+    threadPool pool(THREAD_NUMS);
 
     for (int i = 0; i < SIZE; i++)
     {
@@ -95,12 +141,10 @@ void create_tasks()
                             cout<<result[i];
                            cout<<endl; });
     }
-    sleep(1);
 }
 
 int main()
 {
-    srand(time(NULL));
 
     /*for (int i = 0; i < SIZE; i++)
     {
@@ -116,6 +160,7 @@ int main()
     }*/
 
     create_tasks();
-    sleep(100);
+
+    cout << "thread pool exited in main" << endl;
     return 0;
 }
