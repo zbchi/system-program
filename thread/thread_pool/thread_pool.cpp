@@ -9,8 +9,8 @@
 #include <functional>
 #include <condition_variable>
 using namespace std;
+const int SIZE = 10000;
 
-queue<int> task;
 class threadPool
 {
 
@@ -19,66 +19,103 @@ public:
     {
         for (int i = 0; i < n; i++)
         {
-            thread tmp(work);
-            threads.push_back(tmp);
+            thread tmp(&threadPool::work, this);
+            threads.push_back(move(tmp));
         }
     }
 
+    void add_task(function<void()> tmp)
+    {
+        lock_guard<mutex> lock(m);
+        tasks.push(tmp);
+        cv.notify_all();
+    }
     void work()
     {
         while (1)
         {
-
+            usleep(10);
             unique_lock<mutex> lock(m);
-            while (task.empty())
+            while (tasks.empty())
             {
                 cv.wait(lock);
             }
-            function<void()> tmp = task.front();
-            task.pop();
+            function<void()> tmp = tasks.front();
+            tasks.pop();
             lock.unlock();
             tmp();
         }
     }
-    queue<function<void()>> task;
+    queue<function<void()>> tasks;
     mutex m;
     vector<thread> threads;
     condition_variable cv;
 };
 
-long long jiecheng(int n)
+vector<int> caculate_factorial(int n)
 {
-    if (n == 1)
-        return 1;
-    return n * jiecheng(n - 1);
-}
+    vector<int> result;
+    result.reserve(3000);
+    result.push_back(1);
 
-void print()
-{
-    cout << "hello world" << endl;
-}
-
-void create_task()
-{
-    threadPool pool(10);
-    while (1)
+    for (int i = 2; i <= n; i++)
     {
 
-        pool.task.push(print);
+        int carry = 0;
+        for (size_t j = 0; j < result.size(); j++)
+        {
+            int product = result[j] * i + carry;
+            result[j] = product % 10;
+            carry = product / 10;
+        }
+
+        while (carry > 0)
+        {
+            result.push_back(carry % 10);
+            carry /= 10;
+        }
     }
+
+    return result;
 }
 
-void create_queue()
+void create_tasks()
 {
-    srand(time(nullptr));
+    srand(time(NULL));
+    threadPool pool(16);
 
-    for (int i = 0; i < 1000000000; i++)
-        task.push(rand() % 20 + 1);
-
-    cout << "----" << endl;
+    for (int i = 0; i < SIZE; i++)
+    {
+        pool.add_task([]()
+                      {
+                          vector<int> result;
+                          result.reserve(3000);
+                          result = caculate_factorial(1000);
+                           for (int i = result.size(); i > 0; i--)
+                            cout<<result[i];
+                           cout<<endl; });
+    }
+    sleep(1);
 }
 
-int mian()
+int main()
 {
-    create_task();
+    srand(time(NULL));
+
+    /*for (int i = 0; i < SIZE; i++)
+    {
+        auto lambda = ([]()
+                       {
+        vector<int>result;
+        result.reserve(3000);
+        result=caculate_factorial(rand()%1000+1);
+        for(int i=result.size();i>0;i--)
+        cout<<result[i];
+        cout<<endl; });
+        lambda();
+    }*/
+
+    create_tasks();
+    sleep(100);
+    return 0;
 }
