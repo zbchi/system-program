@@ -25,23 +25,15 @@ public:
             threads.push_back(move(tmp));
         }
     }
-
     ~threadPool()
     {
-        unique_lock<mutex> lock(m_productor);
-        while (!tasks.empty() || threads_active != 0)
+        if (!has_stop)
+            this->stop();
+        for (int i = 0; i < THREAD_NUMS; i++)
         {
-            condition_producter.wait(lock);
+            threads[i].join();
         }
-        condition_consumer.notify_all();
-        cout << "thread pool exited" << endl;
-        cout << "~thread pool exited" << endl;
-
-        cout << "------" << endl;
-        // 为什么卡在这里了
-        return;
     }
-
     void add_task(function<void()> tmp)
     {
         lock_guard<mutex> lock(m_consumer);
@@ -54,38 +46,51 @@ public:
         {
 
             unique_lock<mutex> lock(m_consumer);
-            while (tasks.empty())
-            {
-                condition_consumer.wait(lock);
-            }
-            function<void()> tmp = tasks.front();
-            tasks.pop();
-
-            threads_active++;
-
-            lock.unlock();
-            tmp();
-
-            lock.lock();
-            threads_active--;
             if (tasks.empty() && threads_active == 0)
             {
                 condition_producter.notify_all();
-                cout << "i am thread ,i have exited" << endl;
+                // cout << "notice producer" << endl;
+            }
+            while (!STOP && tasks.empty())
+            {
+                // 此处阻塞
+                condition_consumer.wait(lock);
+            }
+            if (STOP == true)
+            {
+                // cout << "i am thread,exited" << endl;
                 return;
             }
+
+            function<void()> task = tasks.front();
+            tasks.pop();
+
+            threads_active++;
+            lock.unlock();
+
+            task();
+
+            lock.lock();
+            threads_active--;
             lock.unlock();
         }
     }
 
     void stop()
     {
-        unique_lock<mutex> lock(m_productor);
+        unique_lock<mutex> lock_productor(m_productor);
         while (!tasks.empty() || threads_active != 0)
         {
-            condition_producter.wait(lock);
+            // 此处阻塞
+            condition_producter.wait(lock_productor);
         }
-        cout << "thread pool exited" << endl;
+
+        unique_lock<mutex> lock_consumer(m_consumer);
+        STOP = true;
+        lock_consumer.unlock();
+
+        condition_consumer.notify_all();
+        has_stop = true;
     }
 
 private:
@@ -96,6 +101,8 @@ private:
     condition_variable condition_consumer;
     condition_variable condition_producter;
     int threads_active = 0;
+    bool STOP = false;
+    bool has_stop = false;
 };
 
 vector<int> caculate_factorial(int n)
@@ -141,6 +148,7 @@ void create_tasks()
                             cout<<result[i];
                            cout<<endl; });
     }
+    pool.stop();
 }
 
 int main()
@@ -161,6 +169,6 @@ int main()
 
     create_tasks();
 
-    cout << "thread pool exited in main" << endl;
+    // cout << "thread pool exited in main" << endl;
     return 0;
 }
