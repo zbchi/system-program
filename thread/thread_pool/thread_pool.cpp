@@ -2,13 +2,12 @@
 #include <queue>
 #include <thread>
 #include <mutex>
-#include <ctime>
-#include <time.h>
 #include <unistd.h>
 #include <vector>
 #include <functional>
 #include <condition_variable>
 #include <atomic>
+#include <string>
 using namespace std;
 const int SIZE = 10000;
 const int THREAD_NUMS = 16;
@@ -29,10 +28,6 @@ public:
     {
         if (!has_stop)
             this->stop();
-        for (int i = 0; i < THREAD_NUMS; i++)
-        {
-            threads[i].join();
-        }
     }
     void add_task(function<void()> tmp)
     {
@@ -90,6 +85,12 @@ public:
         lock_consumer.unlock();
 
         condition_consumer.notify_all();
+
+        for (int i = 0; i < THREAD_NUMS; i++)
+        {
+            threads[i].join();
+        }
+
         has_stop = true;
     }
 
@@ -144,11 +145,12 @@ void create_tasks()
                           vector<int> result;
                           result.reserve(3000);
                           result = caculate_factorial(1000);
-                           for (int i = result.size(); i > 0; i--)
-                            cout<<result[i];
-                           cout<<endl; });
+                          string str;
+                          for (int i = result.size()-1; i > 0; i--)
+                          str+=(char)(result[i]+'0');
+                          printf("%s\n",str.c_str()); });
     }
-    pool.stop();
+    // pool.stop();
 }
 
 int main()
