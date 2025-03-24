@@ -14,7 +14,7 @@ class threadPool
 {
 
 public:
-    threadPool(int n);
+    threadPool(int threads);
     ~threadPool();
     void add_task(function<void()> tmp);
 
@@ -27,7 +27,6 @@ private:
     mutex m_productor;
     vector<thread> threads;
     condition_variable condition_consumer;
-    condition_variable condition_producter;
 
     bool STOP = false;
     bool has_stop = false;
