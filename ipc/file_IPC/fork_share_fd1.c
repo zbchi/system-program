@@ -26,9 +26,9 @@ int main()
     }
     else if(pid==0)
     {
-        write(fd,str,strlen(str));
+        write(fd,str,strlen(str));  
         printf("child wrote over...\n");
-        
+
         close(fd);
     }
     else

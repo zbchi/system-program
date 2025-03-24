@@ -28,3 +28,9 @@ private:
     {
     }
 }
+
+
+void search()
+{
+    cin<<
+}
