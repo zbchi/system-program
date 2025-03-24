@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include "ThreadPool.h"
 const int SIZE = 10000;
 
 vector<int> caculate_factorial(int n)
@@ -28,22 +29,24 @@ vector<int> caculate_factorial(int n)
     return result;
 }
 
+void task()
+{
+    vector<int> result;
+    result.reserve(3000);
+    result = caculate_factorial(1000);
+    string str;
+    for (int i = result.size() - 1; i > 0; i--)
+        str += (char)(result[i] + '0');
+    printf("%s\n", str.c_str());
+}
 void create_tasks()
 {
-    srand(time(NULL));
     threadPool pool(THREAD_NUMS);
 
     for (int i = 0; i < SIZE; i++)
     {
         pool.add_task([]()
-                      {
-                          vector<int> result;
-                          result.reserve(3000);
-                          result = caculate_factorial(1000);
-                          string str;
-                          for (int i = result.size()-1; i > 0; i--)
-                          str+=(char)(result[i]+'0');
-                          printf("%s\n",str.c_str()); });
+                      { task(); });
     }
 
     sleep(15);
@@ -51,18 +54,27 @@ void create_tasks()
     for (int i = 0; i < SIZE; i++)
     {
         pool.add_task([]()
-                      {
-                          vector<int> result;
-                          result.reserve(3000);
-                          result = caculate_factorial(1000);
-                          string str;
-                          for (int i = result.size()-1; i > 0; i--)
-                          str+=(char)(result[i]+'0');
-                          printf("%s\n",str.c_str()); });
+                      { task(); });
     }
     // pool.stop();
 }
 
+void create_another_tasks()
+{
+    ThreadPool pool(THREAD_NUMS);
+
+    for (int i = 0; i < SIZE; i++)
+    {
+        pool.enqueue(task);
+    }
+
+    sleep(15);
+
+    for (int i = 0; i < SIZE; i++)
+    {
+        pool.enqueue(task);
+    }
+}
 int main()
 {
 
@@ -78,7 +90,7 @@ int main()
         cout<<endl; });
         lambda();
     }*/
-
+    create_another_tasks();
     create_tasks();
     return 0;
 }

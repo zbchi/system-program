@@ -4,7 +4,7 @@ ThreadPool::ThreadPool(int threads)
     stop = false;
     for (int i = 0; i < threads; i++)
     {
-        wokers.emplace_back(
+        workers.emplace_back(
             [this]
             {
                 while (1)
@@ -25,8 +25,15 @@ ThreadPool::ThreadPool(int threads)
     }
 }
 
-template <typename F, typename... Args>
-auto ThreadPool::enqueue(F &&f, Args &...args) -> std::future<typename std::result_of<F(Args...)>::type>
+
+
+ThreadPool::~ThreadPool()
 {
-    using return_type = typename std::result_of<F(Args...)>::type;
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        stop = true;
+    }
+    condition.notify_all();
+    for (std::thread &worker : workers)
+        worker.join();
 }
